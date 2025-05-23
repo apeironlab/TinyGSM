@@ -128,11 +128,16 @@ class TinyGsmUDP : virtual public TinyGsmSocket<modemType, muxCount> {
         delete *nextPointer;
         nextPointer = newNextPointer;
       }
-      size = this->at->modemSend(buff, size, this->mux, host, port);
+      int sizeRes = 0;
+      sizeRes = this->at->modemSend(buff, size, this->mux, host, port);
+      if (sizeRes == 0) {
+        this->begin(this->port);
+        sizeRes = this->at->modemSend(buff, size, this->mux, host, port);
+      }
       delete[] buff;
       this->packetBuffer = nullptr;
 
-      return size;
+      return sizeRes;
     }
 
     size_t write(uint8_t byte) override {
