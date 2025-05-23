@@ -689,10 +689,13 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
         return 0;
       }
     } else {
-      if (waitResponse(10000L, GF("+CIPSEND: 0,"),
-                      GF("+CIPSEND: 0,4" AT_NL), GF("+CIPSEND: 0,9" AT_NL),
-                      GF("ERROR" AT_NL), GF("CLOSE OK" AT_NL)) != 1) {
+      int8_t res = waitResponse(10000L, GF("+CIPSEND: 0,"),
+                      GF("+CIPERROR:" AT_NL), GF("+CIPSEND: 0,9" AT_NL),
+                      GF("ERROR" AT_NL), GF("CLOSE OK" AT_NL));
+      if (res != 1) {
         return 0;
+      } else {
+        streamSkipUntil('\n');
       }
     }
     return len;
