@@ -263,7 +263,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
 #ifdef TINY_GSM_DEBUG
     sendAT(GF("V1"));  // turn on verbose error codes
 #else
-    sendAT(GF("V0"));  // turn off error codes
+    sendAT(GF("V1"));  // turn off error codes
 #endif
     waitResponse();
 
@@ -418,6 +418,9 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     if (waitResponse() != 1) { return false; }
 
     // Get Local IP Address, only assigned after connection
+    //if (getLocalIP() == "") {
+    //  return false;
+    //}
     sendAT(GF("+CGPADDR=1"));
     if (waitResponse(10000L) != 1) { return false; }
 
@@ -477,6 +480,25 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     if (waitResponse(GF(AT_NL "+ICCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
+    res.trim();
+    return res;
+  }
+
+  // Asks for TA Serial Number Identification (IMEI) via the V.25TER standard
+  // AT+GSN command
+  String getIMEIImpl() {
+    sendAT(GF("+CGSN"));
+    streamSkipUntil('\n');  // skip first newline
+    String res = stream.readStringUntil('\n');
+    uint8_t resp = waitResponse();
+    if (resp != 1) {
+      sendAT(GF("+SIMEI?"));
+      resp = waitResponse(2000, GF("+SIMEI:"));
+      if (resp == 1) {
+        res = stream.readStringUntil('\n');
+        waitResponse();
+      }
+    }
     res.trim();
     return res;
   }

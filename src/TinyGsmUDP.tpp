@@ -93,9 +93,13 @@ class TinyGsmUDP : virtual public TinyGsmSocket<modemType, muxCount> {
 
     int beginPacket(const char *host, uint16_t port) override {
       this->buffering = true;
+      if (this->host != nullptr) {
+        delete[] this->host;
+      }
       this->host = new char[strlen(host)+1];
       strcpy(this->host, host);
       this->port = port;
+      return 0;
     }
 
     int endPacket() override {
@@ -117,7 +121,7 @@ class TinyGsmUDP : virtual public TinyGsmSocket<modemType, muxCount> {
       int i = 0;
       while (*nextPointer != nullptr) {
         for (int j = 0; j < (*nextPointer)->length; j++) {
-          buff[i] = (*nextPointer)->buffer[j];
+          buff[i++] = (*nextPointer)->buffer[j];
         }
         delete[] (*nextPointer)->buffer;
         struct bufferElement** newNextPointer = &(*nextPointer)->next;
@@ -126,6 +130,7 @@ class TinyGsmUDP : virtual public TinyGsmSocket<modemType, muxCount> {
       }
       size = this->at->modemSend(buff, size, this->mux, host, port);
       delete[] buff;
+      this->packetBuffer = nullptr;
 
       return size;
     }
@@ -141,11 +146,13 @@ class TinyGsmUDP : virtual public TinyGsmSocket<modemType, muxCount> {
       }
       *nextPointer = new bufferElement {
         size,
-        new uint8_t[size]
+        new uint8_t[size],
+        nullptr
       };
       for (int i = 0; i < size; i++) {
         (*nextPointer)->buffer[i] = buffer[i];
       }
+      return size;
     }
 
     size_t write(const char* str) {
@@ -304,10 +311,10 @@ class TinyGsmUDP : virtual public TinyGsmSocket<modemType, muxCount> {
     protected:
 
     uint32_t   prev_check;
-    char* host;
+    char* host = nullptr;
     uint16_t port;
     bool buffering = false;
-    struct bufferElement* packetBuffer;
+    struct bufferElement* packetBuffer = nullptr;
   };
 };
 
